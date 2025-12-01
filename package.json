@@ -1,10 +1,10 @@
 {
   "name": "scan-code",
   "displayName": "Scan Code",
-  "description": "This Visual Studio Code extension provides an integrated security analysis solution by combining AI-assisted static code scanning with open-source dependency vulnerability detection.",
+  "description": "Ferramenta de análise de segurança de código",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.106.1"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
@@ -14,31 +14,69 @@
   "contributes": {
     "commands": [
       {
-        "command": "scan-code.helloWorld",
-        "title": "Hello World"
-      }, 
-      {
         "command": "scan-code.scan",
-        "title": "Scan Code"
+        "title": "Scan Code: Executar Scan"
+      },
+      {
+        "command": "scan-code.config",
+        "title": "Scan Code: Configurações"
+      },
+      {
+        "command": "scan-code.executarAnalise",
+        "title": "Scan Code: Executar Análise de Segurança"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Scan Code",
+      "properties": {
+        "scanCode.modeloIA": {
+          "type": "string",
+          "enum": ["copilot", "ollama"],
+          "default": "copilot",
+          "description": "Provedor de IA para análise de vulnerabilidades"
+        },
+        "scanCode.modeloCopilot": {
+          "type": "string",
+          "default": "claude-sonnet-4.5",
+          "description": "Modelo do GitHub Copilot a ser usado"
+        },
+        "scanCode.urlOllama": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "URL do servidor Ollama"
+        },
+        "scanCode.modeloOllama": {
+          "type": "string",
+          "default": "llama2",
+          "description": "Modelo do Ollama a ser usado"
+        },
+        "scanCode.habilitarAnaliseEstatica": {
+          "type": "boolean",
+          "default": true,
+          "description": "Habilitar análise estática de código"
+        },
+        "scanCode.habilitarAnaliseDependencias": {
+          "type": "boolean",
+          "default": true,
+          "description": "Habilitar análise de dependências"
+        }
+      }
+    }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.106.1",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "typescript-eslint": "^8.46.3",
-    "eslint": "^9.39.1",
-    "typescript": "^5.9.3",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "@types/vscode": "^1.85.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.2"
   }
 }

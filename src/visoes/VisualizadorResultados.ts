@@ -1,0 +1,470 @@
+import * as vscode from 'vscode';
+import { Scan } from '../scanners/Scan';
+import { SeveridadeVulnerabilidade } from '../scanners/AnalisadorEstatico';
+
+export class VisualizadorResultados {
+    private panel: vscode.WebviewPanel | undefined;
+
+    public mostrarResultados(scan: Scan) {
+        if (this.panel) {
+            this.panel.reveal(vscode.ViewColumn.One);
+        } else {
+            this.panel = vscode.window.createWebviewPanel(
+                'scanCodeResults',
+                'Scan Code - Resultados',
+                vscode.ViewColumn.One,
+                {
+                    enableScripts: true,
+                    retainContextWhenHidden: true
+                }
+            );
+
+            this.panel.onDidDispose(() => {
+                this.panel = undefined;
+            });
+        }
+
+        this.panel.webview.html = this.gerarHTML(scan);
+    }
+
+    private gerarHTML(scan: Scan): string {
+        const totalVulnsDependencias = scan.pacotesVulneraveis.length;
+        const totalVulnsEstaticas = scan.analiseEstatica?.vulnerabilidades.length || 0;
+        const totalArquivos = scan.analiseEstatica?.totalArquivosAnalisados || 0;
+        
+        const vulnsCriticas = scan.analiseEstatica?.vulnerabilidades.filter(
+            v => v.severidade === SeveridadeVulnerabilidade.CRITICA
+        ).length || 0;
+        
+        const vulnsAltas = scan.analiseEstatica?.vulnerabilidades.filter(
+            v => v.severidade === SeveridadeVulnerabilidade.ALTA
+        ).length || 0;
+        
+        const vulnsMedias = scan.analiseEstatica?.vulnerabilidades.filter(
+            v => v.severidade === SeveridadeVulnerabilidade.MEDIA
+        ).length || 0;
+
+        const vulnsBaixas = scan.analiseEstatica?.vulnerabilidades.filter(
+            v => v.severidade === SeveridadeVulnerabilidade.BAIXA
+        ).length || 0;
+
+        return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados do Scan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--vscode-titleBar-activeForeground);
+        }
+
+        .subtitle {
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .summary-card p {
+            color: var(--vscode-descriptionForeground);
+            font-size: 14px;
+        }
+
+        .critica { color: #f85149; }
+        .alta { color: #f0883e; }
+        .media { color: #d29922; }
+        .baixa { color: #3fb950; }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: var(--vscode-editorGroupHeader-tabsBackground);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .badge {
+            background-color: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .section-content {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .section-content.expanded {
+            display: block;
+        }
+
+        .vuln-item {
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border-left: 4px solid;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .vuln-item.critica { border-left-color: #f85149; }
+        .vuln-item.alta { border-left-color: #f0883e; }
+        .vuln-item.media { border-left-color: #d29922; }
+        .vuln-item.baixa { border-left-color: #3fb950; }
+
+        .vuln-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .vuln-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .severity-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-badge.critica { background-color: #f85149; color: white; }
+        .severity-badge.alta { background-color: #f0883e; color: white; }
+        .severity-badge.media { background-color: #d29922; color: white; }
+        .severity-badge.baixa { background-color: #3fb950; color: white; }
+
+        .vuln-details {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .vuln-location {
+            color: var(--vscode-descriptionForeground);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 8px 0;
+        }
+
+        .vuln-code {
+            background-color: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+
+        .vuln-recommendation {
+            background-color: var(--vscode-inputValidation-infoBackground);
+            border-left: 3px solid var(--vscode-inputValidation-infoBorder);
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .vuln-recommendation strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .package-item {
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border-left: 4px solid #f85149;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .package-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .package-vulns {
+            margin-left: 15px;
+        }
+
+        .package-vuln {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        .package-vuln:last-child {
+            border-bottom: none;
+        }
+
+        .expand-icon {
+            transition: transform 0.2s;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Scan Code - Resultados da Análise</h1>
+        <p class="subtitle">Análise completa de segurança do seu código</p>
+
+        <div class="summary">
+            <div class="summary-card">
+                <h3 class="critica">${totalVulnsDependencias}</h3>
+                <p>Pacotes Vulneráveis</p>
+            </div>
+            <div class="summary-card">
+                <h3>${totalArquivos}</h3>
+                <p>Arquivos Analisados</p>
+            </div>
+            <div class="summary-card">
+                <h3 class="critica">${vulnsCriticas}</h3>
+                <p>Vulnerabilidades Críticas</p>
+            </div>
+            <div class="summary-card">
+                <h3 class="alta">${vulnsAltas}</h3>
+                <p>Vulnerabilidades Altas</p>
+            </div>
+            <div class="summary-card">
+                <h3 class="media">${vulnsMedias}</h3>
+                <p>Vulnerabilidades Médias</p>
+            </div>
+            <div class="summary-card">
+                <h3 class="baixa">${vulnsBaixas}</h3>
+                <p>Vulnerabilidades Baixas</p>
+            </div>
+        </div>
+
+        ${this.gerarSecaoDependencias(scan)}
+        ${this.gerarSecaoAnaliseEstatica(scan)}
+    </div>
+
+    <script>
+        function toggleSection(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                icon.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                icon.classList.add('expanded');
+            }
+        }
+    </script>
+</body>
+</html>`;
+    }
+
+    private gerarSecaoDependencias(scan: Scan): string {
+        if (scan.pacotesVulneraveis.length === 0) {
+            return `
+                <div class="section">
+                    <div class="section-header">
+                        <h2>📦 Dependências Vulneráveis</h2>
+                        <span class="badge">0 pacotes</span>
+                    </div>
+                    <div class="section-content expanded">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">✅</div>
+                            <p>Nenhuma dependência vulnerável encontrada!</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        let html = `
+            <div class="section">
+                <div class="section-header" onclick="toggleSection('deps')">
+                    <h2>📦 Dependências Vulneráveis</h2>
+                    <div>
+                        <span class="badge">${scan.pacotesVulneraveis.length} pacotes</span>
+                        <span id="deps-icon" class="expand-icon expanded">▶</span>
+                    </div>
+                </div>
+                <div id="deps" class="section-content expanded">
+        `;
+
+        for (const pacote of scan.pacotesVulneraveis) {
+            html += `
+                <div class="package-item">
+                    <div class="package-name">${pacote.nome}@${pacote.versao}</div>
+                    <div class="package-vulns">
+            `;
+
+            for (const vuln of pacote.vulnerabilidades) {
+                html += `
+                    <div class="package-vuln">
+                        <strong>${vuln.id || 'Vulnerabilidade Desconhecida'}</strong>
+                        <p>${vuln.summary || 'Sem descrição disponível'}</p>
+                    </div>
+                `;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    private gerarSecaoAnaliseEstatica(scan: Scan): string {
+        const vulns = scan.analiseEstatica?.vulnerabilidades || [];
+
+        if (vulns.length === 0) {
+            return `
+                <div class="section">
+                    <div class="section-header">
+                        <h2>🔍 Análise Estática de Código</h2>
+                        <span class="badge">0 vulnerabilidades</span>
+                    </div>
+                    <div class="section-content expanded">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">✅</div>
+                            <p>Nenhuma vulnerabilidade encontrada na análise estática!</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        let html = `
+            <div class="section">
+                <div class="section-header" onclick="toggleSection('static')">
+                    <h2>🔍 Análise Estática de Código</h2>
+                    <div>
+                        <span class="badge">${vulns.length} vulnerabilidades</span>
+                        <span id="static-icon" class="expand-icon expanded">▶</span>
+                    </div>
+                </div>
+                <div id="static" class="section-content expanded">
+        `;
+
+        for (const vuln of vulns) {
+            const severidadeClass = vuln.severidade.toLowerCase();
+            
+            html += `
+                <div class="vuln-item ${severidadeClass}">
+                    <div class="vuln-header">
+                        <div class="vuln-title">${vuln.tipo}</div>
+                        <span class="severity-badge ${severidadeClass}">${vuln.severidade}</span>
+                    </div>
+                    <div class="vuln-details">
+                        <div class="vuln-location">
+                            📁 ${vuln.arquivo}:${vuln.linha}:${vuln.coluna}
+                        </div>
+                        <p>${vuln.mensagem}</p>
+                        <div class="vuln-code">${this.escapeHtml(vuln.codigo)}</div>
+                        <div class="vuln-recommendation">
+                            <strong>💡 Recomendação:</strong>
+                            ${vuln.recomendacao}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    private escapeHtml(text: string): string {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+}
