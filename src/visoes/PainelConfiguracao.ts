@@ -307,39 +307,7 @@ export class PainelConfiguracao {
                     <input type="text" id="modeloOllama" placeholder="llama2">
                 </div>
             </div>
-        </div>
-
-        <div class="section">
-            <h2>🔍 Tipos de Análise</h2>
-            <div class="info-box">
-                <strong>ℹ️ Informação</strong>
-                Você pode habilitar ou desabilitar tipos específicos de análise
-            </div>
-            
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="habilitarAnaliseDependencias" checked>
-                    <label for="habilitarAnaliseDependencias">
-                        <strong>Análise de Dependências</strong><br>
-                        <span style="font-size: 12px; color: var(--vscode-descriptionForeground);">
-                            Verifica vulnerabilidades conhecidas em pacotes e bibliotecas
-                        </span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="habilitarAnaliseEstatica" checked>
-                    <label for="habilitarAnaliseEstatica">
-                        <strong>Análise Estática de Código</strong><br>
-                        <span style="font-size: 12px; color: var(--vscode-descriptionForeground);">
-                            Busca por padrões de código inseguro (SQL Injection, XSS, etc.)
-                        </span>
-                    </label>
-                </div>
-            </div>
-        </div>
+        </div
 
         <div class="buttons">
             <button class="primary" onclick="salvar()">💾 Salvar Configurações</button>

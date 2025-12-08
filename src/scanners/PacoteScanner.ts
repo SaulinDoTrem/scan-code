@@ -2,26 +2,20 @@ import { DominioError } from "../errors/DominioError";
 import { LeitorArquivo } from "../leitores/LeitorArquivo";
 import { Conector } from "../osv/Conector";
 import { Pacote } from "../pacotes/Pacote";
-import { Scan } from "./Scan";
-import { Scanner } from "./Scanner";
 import * as vscode from 'vscode';
-import { AnalisadorVulnerabilidade, ResultadosAnaliseIA } from "../analisadores/AnalisadorVulnerabilidade";
+import { ScanPacote } from "./ScanPacote";
 
-export class PacoteScanner implements Scanner {
+export class PacoteScanner {
 
     constructor(
         private readonly conectorAPI: Conector,
         private readonly leitorArquivo: LeitorArquivo,
-        private readonly analisador: AnalisadorVulnerabilidade
     ) {
     }
 
-    async scan(): Promise<Scan> {
+    async scan(): Promise<ScanPacote> {
         const pacotes = await this.lerPacotes();
         const scan = await this.consultarVulnerabilidades(pacotes);
-        if (scan.pacotesVulneraveis.length > 0) {
-            scan.analise = await this.analisarCodigoComIA(scan.pacotesVulneraveis);
-        }
         return scan;
     }
 
@@ -31,9 +25,9 @@ export class PacoteScanner implements Scanner {
             throw new DominioError('Workspace não encontrado.');
         }
 
-        const packageJsonPath = vscode.Uri.joinPath(folder.uri, 'package.json').fsPath;
+        const packageJsonPath = vscode.Uri.joinPath(folder.uri, 'package.json');
         const packageJson = await this.leitorArquivo.ler(packageJsonPath);
-        const pacotes: Pacote[] = this.extrairPacotesNPM(packageJson);
+        const pacotes: Pacote[] = this.extrairPacotesNPM(JSON.parse(packageJson));
 
         if (pacotes.length == 0) {
             throw new DominioError('Nenhum pacote encontrado.');
@@ -41,7 +35,7 @@ export class PacoteScanner implements Scanner {
         return pacotes;
     }
 
-    private async consultarVulnerabilidades(pacotes: Pacote[]): Promise<Scan> {
+    private async consultarVulnerabilidades(pacotes: Pacote[]): Promise<ScanPacote> {
         const requisicoes = pacotes.map((pacote) => this.conectorAPI.consultarPacote(pacote));
         const respostas = await Promise.allSettled(requisicoes);
         const pacotesVulneraveis: Pacote[] = [];
@@ -59,7 +53,7 @@ export class PacoteScanner implements Scanner {
                 console.log(`Erro ao consultar o pacote: ${resposta.reason}`);
             }
         });
-        return new Scan(pacotesVulneraveis, pacotesNaoEncontrados);
+        return new ScanPacote(pacotesVulneraveis, pacotesNaoEncontrados);
     }
 
     private extrairPacotesNPM(packageJson: any): Pacote[] {
@@ -87,19 +81,5 @@ export class PacoteScanner implements Scanner {
             }
             array.push(new Pacote(chave, valor));
         }
-    }
-
-    /**
-     * Analisa o código em busca de uso real das vulnerabilidades
-     */
-    private async analisarCodigoComIA(pacotesVulneraveis: Pacote[]): Promise<ResultadosAnaliseIA|undefined> {
-        const ocorrenciasPorPacote = await this.analisador.buscarArquivosComPacotesVulneraveis(
-            pacotesVulneraveis
-        );
-        if (ocorrenciasPorPacote.size === 0) {
-            return undefined;
-        }
-
-        return this.analisador.procurarVulnerabilidadesEmCodigo(pacotesVulneraveis, ocorrenciasPorPacote);
     }
 }

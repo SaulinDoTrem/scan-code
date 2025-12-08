@@ -20,10 +20,6 @@
       {
         "command": "scan-code.config",
         "title": "Scan Code: Configurações"
-      },
-      {
-        "command": "scan-code.executarAnalise",
-        "title": "Scan Code: Executar Análise de Segurança"
       }
     ],
     "configuration": {
