@@ -8,9 +8,12 @@ export class BuscadorArquivo {
 
         const arquivos = await vscode.workspace.findFiles(
             '**/*.{ts,js,tsx,jsx}',
-            '**/node_modules/**'
+            '**/{node_modules,spec,test}/**'
         );
         
-        return arquivos;
+        return arquivos.filter(uri => 
+            !uri.path.includes('.spec.ts') && 
+            !uri.path.includes('.spec.js')
+        );
     }
 }

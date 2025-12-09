@@ -90,10 +90,15 @@ export class VisaoVScode {
             let vulnerabilidadesHTML = '';
 
             for (const codigoVuln of vuln.codigosVulneraveis || []) {
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(arquivo);
+                const relativePath = workspaceFolder 
+                    ? vscode.workspace.asRelativePath(arquivo, false)
+                    : arquivo.fsPath;
+                
                 vulnerabilidadesHTML += `
                     <div>
                         <div class="vuln-location">
-                            📁 ${arquivo.fsPath}:${codigoVuln.inicio}
+                            📁 ${relativePath}:${codigoVuln.inicio}
                         </div>
                         <div class="vuln-code">${this.escapeHtml(codigoVuln, conteudoArquivo)}</div>
                     </div>
