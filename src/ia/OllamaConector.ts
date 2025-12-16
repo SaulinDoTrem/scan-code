@@ -5,8 +5,8 @@ import { ConectorIA } from './ConectorIA';
  */
 export class OllamaConector implements ConectorIA {
     constructor(
-        private readonly modelo: string = 'llama2',
-        private readonly baseUrl: string = 'http://localhost:11434'
+        private readonly baseUrl: string = 'http://localhost:11434',
+        private readonly modelo: string = 'llama2'
     ) {}
 
     async prompt(prompt: string): Promise<string> {

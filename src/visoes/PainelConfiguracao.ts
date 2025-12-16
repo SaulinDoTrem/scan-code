@@ -5,8 +5,6 @@ export type ConfiguracaoScanCode = {
     modeloCopilot: string;
     urlOllama?: string;
     modeloOllama?: string;
-    habilitarAnaliseEstatica: boolean;
-    habilitarAnaliseDependencias: boolean;
 };
 
 export class GerenciadorConfiguracao {
@@ -20,8 +18,6 @@ export class GerenciadorConfiguracao {
             modeloCopilot: config.get('modeloCopilot', 'claude-sonnet-4.5'),
             urlOllama: config.get('urlOllama', 'http://localhost:11434'),
             modeloOllama: config.get('modeloOllama', 'llama2'),
-            habilitarAnaliseEstatica: config.get('habilitarAnaliseEstatica', true),
-            habilitarAnaliseDependencias: config.get('habilitarAnaliseDependencias', true)
         };
     }
 
@@ -39,12 +35,6 @@ export class GerenciadorConfiguracao {
         }
         if (config.modeloOllama !== undefined) {
             await vsconfig.update('modeloOllama', config.modeloOllama, vscode.ConfigurationTarget.Global);
-        }
-        if (config.habilitarAnaliseEstatica !== undefined) {
-            await vsconfig.update('habilitarAnaliseEstatica', config.habilitarAnaliseEstatica, vscode.ConfigurationTarget.Global);
-        }
-        if (config.habilitarAnaliseDependencias !== undefined) {
-            await vsconfig.update('habilitarAnaliseDependencias', config.habilitarAnaliseDependencias, vscode.ConfigurationTarget.Global);
         }
     }
 }
@@ -352,8 +342,6 @@ export class PainelConfiguracao {
             document.getElementById('modeloCopilot').value = config.modeloCopilot;
             document.getElementById('urlOllama').value = config.urlOllama || '';
             document.getElementById('modeloOllama').value = config.modeloOllama || '';
-            document.getElementById('habilitarAnaliseEstatica').checked = config.habilitarAnaliseEstatica;
-            document.getElementById('habilitarAnaliseDependencias').checked = config.habilitarAnaliseDependencias;
 
             // Atualizar visualização
             const event = new Event('change');
@@ -366,8 +354,6 @@ export class PainelConfiguracao {
                 modeloCopilot: document.getElementById('modeloCopilot').value,
                 urlOllama: document.getElementById('urlOllama').value,
                 modeloOllama: document.getElementById('modeloOllama').value,
-                habilitarAnaliseEstatica: document.getElementById('habilitarAnaliseEstatica').checked,
-                habilitarAnaliseDependencias: document.getElementById('habilitarAnaliseDependencias').checked
             };
 
             vscode.postMessage({
@@ -382,8 +368,6 @@ export class PainelConfiguracao {
                 modeloCopilot: 'claude-sonnet-4.5',
                 urlOllama: 'http://localhost:11434',
                 modeloOllama: 'llama2',
-                habilitarAnaliseEstatica: true,
-                habilitarAnaliseDependencias: true
             };
 
             carregarConfiguracao(config);

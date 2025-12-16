@@ -78,7 +78,7 @@ export class ScanControladora {
 
                     this.visao.exibirVulnerabilidades(arquivo, conteudo, analiseEstatica, analisePacotes);
                 } catch (e) {
-                    console.error(`Erro ao analisar o arquivo ${arquivo.fsPath}:`, e);
+                    vscode.window.showWarningMessage(`Erro ao analisar o arquivo ${arquivo.fsPath}`);
                 }
             });
 
