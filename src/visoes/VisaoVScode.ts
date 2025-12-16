@@ -104,6 +104,19 @@ export class VisaoVScode {
                     </div>
                 `;
             }
+
+            let sugestao = "";
+            if (vuln.sugestaoCorrecao && vuln.sugestaoCorrecao != "") {
+              sugestao = `
+                      <div class="vuln-recommendation">
+                          <strong>💡 Recomendação:</strong>
+                          ${
+                            vuln.sugestaoCorrecao ??
+                            "Nenhuma recomendação disponível."
+                          }
+                      </div>
+                      `;
+            }
             
             html += `
                 <div class="vuln-item ${severidadeClass}">
@@ -113,10 +126,7 @@ export class VisaoVScode {
                     </div>
                     <div class="vuln-details">
                         <p>${vuln.problemaDetectado ?? 'Problema desconhecido'}</p>
-                        <div class="vuln-recommendation">
-                            <strong>💡 Recomendação:</strong>
-                            ${vuln.sugestaoCorrecao ?? 'Nenhuma recomendação disponível.'}
-                        </div>
+                        ${sugestao}
                         ${vulnerabilidadesHTML}
                     </div>
                 </div>

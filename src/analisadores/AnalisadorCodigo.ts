@@ -20,7 +20,11 @@ export class AnalisadorCodigo {
         return `
 # Análise estática de vulnerabilidades
 \`\`\`typescript
+
+
 ${codigo}
+
+
 \`\`\`
 
 ## Tarefa:
